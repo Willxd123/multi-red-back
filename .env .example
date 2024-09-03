@@ -1,0 +1,6 @@
+DATABASE_HOST=localhost
+DATABASE_PORT=puerto
+DATABASE_USER=nombre de usuario
+DATABASE_PASSWORD=contraseña
+DATABASE_NAME=nombre de la base de datos
+DB_CONNECTION=gestor de base de datos
