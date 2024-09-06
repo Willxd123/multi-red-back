@@ -1,22 +1,30 @@
-import { Column, DeleteDateColumn, Entity } from "typeorm";
+import { Column, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Room } from 'src/rooms/entities/room.entity';
+import { RoomUser } from 'src/room-user/entities/room-user.entity';
 
 @Entity()
 export class User {
-    @Column({ primary: true, generated: true})
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    name: string;
-    //campo unico para que no se repitan los correos
-    @Column({unique: true,nullable: false})
-    email: string;
-    //campo obligatorio
-    @Column({nullable: false})
-    password: string;
-    
-    @Column({default: 'user'})
-    rol: string;
-//permite eliminarse al usuario pero se amntiene sus datos 
-    @DeleteDateColumn()
-    deletedAt: Date;
+  @Column()
+  name: string;
+
+  @Column({ unique: true, nullable: false })
+  email: string;
+
+  @Column({ nullable: false })
+  password: string;
+
+  @Column({ default: 'user' })
+  role: string;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
+
+  @OneToMany(() => Room, room => room.creator)
+  createdRooms: Room[];
+
+  @OneToMany(() => RoomUser, roomUser => roomUser.user)
+  rooms: RoomUser[]; // Salas a las que el usuario pertenece
 }
