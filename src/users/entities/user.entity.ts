@@ -1,6 +1,7 @@
 import { Column, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Room } from 'src/rooms/entities/room.entity';
 import { RoomUser } from 'src/room-user/entities/room-user.entity';
+import { Role } from '../../common/enum/rol.enum';
 
 @Entity()
 export class User {
@@ -13,11 +14,11 @@ export class User {
   @Column({ unique: true, nullable: false })
   email: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, select: false })
   password: string;
 
-  @Column({ default: 'user' })
-  role: string;
+  @Column({ type: 'enum', default: Role.USER, enum: Role })
+  role: Role;
 
   @DeleteDateColumn()
   deletedAt: Date;
