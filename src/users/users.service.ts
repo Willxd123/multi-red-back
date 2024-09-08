@@ -11,18 +11,25 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ){ }
+  ) {}
 
   create(CreateUserDto: CreateUserDto) {
     return this.userRepository.save(CreateUserDto);
   }
   //retorna si existe o no el usuario en la bd
   findOneByEmail(email: string) {
-    return this.userRepository.findOneBy({ email })
+    return this.userRepository.findOneBy({ email });
+  }
+  //retorna los datos del usuario menos la contraseña luego de loguearse
+  findByEmailWithPassword(email: string) {
+    return this.userRepository.findOne({
+      where: { email },
+      select: ['id', 'name', 'email', 'password', 'role'],
+    });
   }
 
   findAll() {
-    return `This action returns all users`;
+    return this.userRepository.find();
   }
 
   findOne(id: number) {
