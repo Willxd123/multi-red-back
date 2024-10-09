@@ -11,6 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { UserActiveInterface } from 'src/common/interfaces/user-active.interface';
 import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway({
@@ -47,6 +48,17 @@ export class RoomsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.emit('userDisconnected', { email: user.email });
     }
   }
+
+  // Método para obtener el usuario desde el token JWT
+  private getUserFromToken(client: Socket): UserActiveInterface {
+    const token = client.handshake.headers.authorization?.split(' ')[1];
+    if (!token) {
+      throw new Error('Token no provisto');
+    }
+    const decodedUser = this.jwtService.verify(token);
+    return decodedUser;
+  }
+
   // Crear una nueva sala con Socket.IO
   @SubscribeMessage('createRoom')
   async handleCreateRoom(
