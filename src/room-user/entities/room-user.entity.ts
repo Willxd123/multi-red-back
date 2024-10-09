@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Room } from 'src/rooms/entities/room.entity';
+import { Room_rol } from 'src/common/enums/room-rol.enum';
 
 @Entity()
 export class RoomUser {
@@ -13,7 +14,8 @@ export class RoomUser {
   @ManyToOne(() => Room, room => room.participants)
   room: Room;
 
-  @Column({ type: 'varchar', length: 20 })
-  role: string;  // Agregamos la columna para el rol
+  @Column({ type: 'enum', enum: Room_rol })
+  role: Room_rol;
+
 
 }

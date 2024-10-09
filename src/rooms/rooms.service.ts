@@ -7,6 +7,7 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { User } from 'src/users/entities/user.entity';
 import { UserActiveInterface } from 'src/common/interfaces/user-active.interface';
+import { Room_rol } from 'src/common/enums/room-rol.enum';
 
 @Injectable()
 export class RoomsService {
@@ -36,7 +37,7 @@ export class RoomsService {
     const room = this.roomRepository.create({
       name,
       code,
-      creator, // Relacionamos la sala con el usuario creador
+      creator,  // Relacionamos la sala con el usuario creador
     });
 
     // Guardar la sala en la base de datos
@@ -46,10 +47,19 @@ export class RoomsService {
     const roomUser = this.roomUserRepository.create({
       user: creator,
       room: newRoom,
+      role: Room_rol.ADMIN,  // Asignar rol de ADMIN al creador
     });
     await this.roomUserRepository.save(roomUser);
 
     return newRoom;
+  }
+  
+  // Buscar sala por código
+  async findByCode(code: string) {
+    return this.roomRepository.findOne({
+      where: { code },
+      relations: ['participants'],
+    });
   }
 
   // Implementar findAll
@@ -80,10 +90,9 @@ export class RoomsService {
     }
     return this.roomRepository.remove(room);
   }
-  //generador de las sala unica
-  private generateUniqueCode(): string {
-    return Math.random().toString(36).substr(2, 4).toUpperCase(); // Código único de sala
-  }
+  //
+  // Obtener todos los usuarios de una sala (incluidos conectados y desconectados)
+
   async getAllUsersInRoom(roomCode: string) {
     // Obtén la sala por su código, incluyendo la relación con los usuarios
     const room = await this.roomRepository.findOne({
@@ -104,54 +113,30 @@ export class RoomsService {
 
     return allUsers;
   }
-
+  //generador de las sala unica
+  private generateUniqueCode(): string {
+    return Math.random().toString(36).substr(2, 4).toUpperCase(); // Código único de sala
+  }
+  //------------------------
+  async findRoomUser(userId: number, roomId: number) {
+    return await this.roomUserRepository.findOne({ where: { user: { id: userId }, room: { id: roomId } } });
+  }
+  
   async addUserToRoom(userId: number, roomId: number) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     const room = await this.roomRepository.findOne({ where: { id: roomId } });
-
+  
     if (!user || !room) {
       throw new Error('Usuario o sala no encontrados');
     }
-
+  
     const roomUser = this.roomUserRepository.create({
       user,
       room,
     });
-
+  
     await this.roomUserRepository.save(roomUser);
   }
-  // Buscar sala por código
-  async findByCode(code: string) {
-    return this.roomRepository.findOne({
-      where: { code },
-      relations: ['participants'],
-    });
-  }
-  async findRoomUser(userId: number, roomId: number) {
-    return await this.roomUserRepository.findOne({
-      where: { user: { id: userId }, room: { id: roomId } },
-    });
-  }
-  /* async getUserRooms(user: UserActiveInterface) {
-    const userEntity = await this.userRepository.findOne({
-      where: { email: user.email },
-      relations: ['createdRooms', 'rooms', 'rooms.room'],
-    });
+  
 
-    if (!userEntity) {
-      throw new Error('Usuario no encontrado');
-    }
-
-    // Obtenemos las salas que ha creado el usuario
-    const createdRooms = userEntity.createdRooms;
-
-    // Obtenemos las salas donde el usuario es un participante (relación RoomUser)
-    const participantRooms = userEntity.rooms.map(roomUser => roomUser.room);
-
-    // Unimos ambas listas
-    const allRooms = [...createdRooms, ...participantRooms];
-
-    // Devolvemos solo las salas relacionadas con el usuario
-    return allRooms;
-  } */
 }
