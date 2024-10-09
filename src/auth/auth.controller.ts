@@ -3,17 +3,14 @@ import { Controller, Post, Body, Get, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LogingDto } from './dto/login.dto';
-import { User } from '../users/entities/user.entity';
-import { Roles } from './decorators/roles.decorator';
-import { RolesGuard } from './guard/roles.guard';
-import { Role } from 'src/common/enum/rol.enum';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Auth } from './decorators/auth.decorator';
+import { ActiveUser } from 'src/common/decorators/active-user.decorator';
+import { UserActiveInterface } from 'src/common/interfaces/user-active.interface';
+import { Role } from 'src/common/enums/rol.enum';
 
-interface RequestWithUser extends Request {
-  user: {
-    email: string;
-    role: string;
-  };
-}
+
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -34,10 +31,11 @@ export class AuthController {
   }
 
   //vista a perfil
-  @Get('perfil')
-  @Roles(Role.USER)
-  @UseGuards(AuthGuard, RolesGuard)
-  perfil(@Req() req: RequestWithUser) {
-    return this.authService.perfil(req.user);
+  @ApiBearerAuth()
+  @Get('profile')
+  @Auth(Role.USER)
+  profile(@ActiveUser() user: UserActiveInterface) {
+    console.log(user);
+    return this.authService.profile(user);
   }
 }

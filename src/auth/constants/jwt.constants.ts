@@ -1,3 +1,5 @@
+console.log(process.env.JWT_SECRET);
+
 export const jwtConstants = {
-    secret: 'clave para la utenticacion',
-}
+  secret: process.env.JWT_SECRET,
+};
