@@ -6,6 +6,7 @@ import { RoomUser } from 'src/room-user/entities/room-user.entity';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { User } from 'src/users/entities/user.entity';
+import { UserActiveInterface } from 'src/common/interfaces/user-active.interface';
 
 @Injectable()
 export class RoomsService {
@@ -19,22 +20,23 @@ export class RoomsService {
   ) {}
 
   // Renombrar el método a 'create' para que coincida con el controller
-  async create(createRoomDto: CreateRoomDto) {
-    const { userId, name } = createRoomDto;
+  async create(createRoomDto: CreateRoomDto, user: UserActiveInterface) {
+    const { name } = createRoomDto;
 
-    // Buscar el usuario que está creando la sala
-    const user = await this.userRepository.findOneBy({ id: userId });
-    if (!user) {
+    // Buscar el usuario autenticado usando su email o ID desde el token
+    const creator = await this.userRepository.findOneBy({ email: user.email });
+    if (!creator) {
       throw new Error('User not found');
     }
 
     // Crear el código único para la sala
     const code = this.generateUniqueCode();
+
     // Crear la sala
     const room = this.roomRepository.create({
       name,
       code,
-      creator: user,  // Relacionar la sala con el creador
+      creator, // Relacionamos la sala con el usuario creador
     });
 
     // Guardar la sala en la base de datos
@@ -42,7 +44,7 @@ export class RoomsService {
 
     // Agregar al creador como participante en la sala
     const roomUser = this.roomUserRepository.create({
-      user,
+      user: creator,
       room: newRoom,
     });
     await this.roomUserRepository.save(roomUser);
@@ -82,4 +84,74 @@ export class RoomsService {
   private generateUniqueCode(): string {
     return Math.random().toString(36).substr(2, 4).toUpperCase(); // Código único de sala
   }
+  async getAllUsersInRoom(roomCode: string) {
+    // Obtén la sala por su código, incluyendo la relación con los usuarios
+    const room = await this.roomRepository.findOne({
+      where: { code: roomCode },
+      relations: ['participants', 'participants.user'], // Asegúrate de incluir los usuarios
+    });
+
+    if (!room) {
+      throw new Error('Sala no encontrada');
+    }
+
+    // Mapear la lista de usuarios para devolver su email y estado de conexión
+    const allUsers = room.participants.map((participant) => ({
+      email: participant.user.email,
+      name: participant.user.name,
+      isConnected: false, // Inicialmente, asumimos que están desconectados
+    }));
+
+    return allUsers;
+  }
+
+  async addUserToRoom(userId: number, roomId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const room = await this.roomRepository.findOne({ where: { id: roomId } });
+
+    if (!user || !room) {
+      throw new Error('Usuario o sala no encontrados');
+    }
+
+    const roomUser = this.roomUserRepository.create({
+      user,
+      room,
+    });
+
+    await this.roomUserRepository.save(roomUser);
+  }
+  // Buscar sala por código
+  async findByCode(code: string) {
+    return this.roomRepository.findOne({
+      where: { code },
+      relations: ['participants'],
+    });
+  }
+  async findRoomUser(userId: number, roomId: number) {
+    return await this.roomUserRepository.findOne({
+      where: { user: { id: userId }, room: { id: roomId } },
+    });
+  }
+  /* async getUserRooms(user: UserActiveInterface) {
+    const userEntity = await this.userRepository.findOne({
+      where: { email: user.email },
+      relations: ['createdRooms', 'rooms', 'rooms.room'],
+    });
+
+    if (!userEntity) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // Obtenemos las salas que ha creado el usuario
+    const createdRooms = userEntity.createdRooms;
+
+    // Obtenemos las salas donde el usuario es un participante (relación RoomUser)
+    const participantRooms = userEntity.rooms.map(roomUser => roomUser.room);
+
+    // Unimos ambas listas
+    const allRooms = [...createdRooms, ...participantRooms];
+
+    // Devolvemos solo las salas relacionadas con el usuario
+    return allRooms;
+  } */
 }

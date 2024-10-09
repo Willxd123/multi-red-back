@@ -8,7 +8,7 @@ import { RegisterDto } from './dto/register.dto';
 import * as bcryptjs from 'bcryptjs';
 import { LogingDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '../common/enum/rol.enum';
+
 
 @Injectable()
 export class AuthService {
@@ -46,7 +46,7 @@ export class AuthService {
       throw new UnauthorizedException('password is wrong');
     }
     //no poner informacion confidencial del usuario
-    const payload = { email: user.email, role: user.role };
+    const payload = {id: user.id, email: user.email, role: user.role };
 
     const token = await this.jwtService.signAsync(payload);
 
@@ -57,10 +57,8 @@ export class AuthService {
   }
 
   //prueba para ruta con rol autorizado
-  async perfil({ email, role }: { email: string; role: string }) {
-    /* if (role !== Role.USER && Role.ADMIN) {
-      throw new UnauthorizedException('usuario no autorizado');
-    } */
+
+  async profile({ email, role }: { email: string; role: string }) {
     return await this.usersService.findOneByEmail(email);
   }
 }

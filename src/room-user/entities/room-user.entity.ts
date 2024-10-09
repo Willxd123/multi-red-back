@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Room } from 'src/rooms/entities/room.entity';
 
@@ -12,4 +12,8 @@ export class RoomUser {
 
   @ManyToOne(() => Room, room => room.participants)
   room: Room;
+
+  @Column({ type: 'varchar', length: 20 })
+  role: string;  // Agregamos la columna para el rol
+
 }
