@@ -1,5 +1,14 @@
 import { AuthGuard } from './guard/auth.guard';
-import { Controller, Post, Body, Get, Req, UseGuards, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Req,
+  UseGuards,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LogingDto } from './dto/login.dto';
@@ -37,9 +46,19 @@ export class AuthController {
   }
 
   @Get('google/callback')
-  async googleCallback(@Req() req, @Res() res) {
-    const response = await this.authService.login(req.user.id);
-    /* res.redirect(`http://localhost:4200?token=${response.accessToken}`); */
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthRedirect(@Req() req, @Res() res) {
+    try {
+      const { token, user } = await this.authService.googleLogin(req.user); // Esperamos la resolución de la promesa
+      console.log('Token generado:', token); // Verificamos que el token esté bien
+      // Obtener el origen de la solicitud (opcional para entornos múltiples)
+      const origin = req.headers.origin || 'http://localhost:4200';
+      // Redirigir al frontend correspondiente con el token
+      res.redirect(`${origin}/?token=${token}`);
+    } catch (error) {
+      console.error('Error en la autenticación con Google:', error);
+      res.status(500).json({ message: 'Error en la autenticación con Google' });
+    }
   }
 
   //vista a perfil

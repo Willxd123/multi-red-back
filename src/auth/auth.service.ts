@@ -63,44 +63,29 @@ export class AuthService {
   }
 
   //google
-  async googleLogin(user: any) {
-    if (!user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-
-    // Verificar si el usuario ya existe en la base de datos por email
+  async googleLogin(user: any): Promise<{ token: string; user: any }> {
     let existingUser = await this.usersService.findOneByEmail(user.email);
-
+  
     if (!existingUser) {
-      // Si no existe, creamos un nuevo usuario en la BD
       existingUser = await this.usersService.create({
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
-        password: null, // No se usa password para usuarios de Google, pero lo dejamos vacío
+        password: null, // No almacenamos contraseña para usuarios de Google
       });
     }
-
-    // Generar JWT basado en el usuario de la BD
-    const payload = {
-      id: existingUser.id,
-      email: existingUser.email,
-      role: existingUser.role,
-    
-    };
-
-    const token = await this.jwtService.signAsync(payload);
-
+  
+    const token = await this.jwtService.signAsync({ id: existingUser.id, email: existingUser.email });
+  
     return {
       token,
-        email: existingUser.email,
+      user: {
+        id: existingUser.id,
         name: existingUser.name,
-        picture: user.picture, // Foto de perfil de Google
+        email: existingUser.email,
+        role: existingUser.role,
+      },
     };
   }
-  async validateGoogleUser(googleUser: CreateUserDto) {
-    const user = await this.usersService.findOneByEmail(googleUser.email);
-    if (user) return user;
-    return await this.usersService.create(googleUser);
-  }
   
+
 }
