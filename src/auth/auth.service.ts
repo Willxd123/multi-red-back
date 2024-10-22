@@ -8,7 +8,7 @@ import { RegisterDto } from './dto/register.dto';
 import * as bcryptjs from 'bcryptjs';
 import { LogingDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -46,7 +46,7 @@ export class AuthService {
       throw new UnauthorizedException('password is wrong');
     }
     //no poner informacion confidencial del usuario
-    const payload = {id: user.id, email: user.email, role: user.role };
+    const payload = { id: user.id, email: user.email, role: user.role };
 
     const token = await this.jwtService.signAsync(payload);
 
@@ -61,4 +61,31 @@ export class AuthService {
   async profile({ email, role }: { email: string; role: string }) {
     return await this.usersService.findOneByEmail(email);
   }
+
+  //google
+  async googleLogin(user: any): Promise<{ token: string; user: any }> {
+    let existingUser = await this.usersService.findOneByEmail(user.email);
+  
+    if (!existingUser) {
+      existingUser = await this.usersService.create({
+        email: user.email,
+        name: `${user.firstName} ${user.lastName}`,
+        password: null, // No almacenamos contraseña para usuarios de Google
+      });
+    }
+  
+    const token = await this.jwtService.signAsync({ id: existingUser.id, email: existingUser.email });
+  
+    return {
+      token,
+      user: {
+        id: existingUser.id,
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role,
+      },
+    };
+  }
+  
+
 }
