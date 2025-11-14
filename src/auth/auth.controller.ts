@@ -1,3 +1,4 @@
+import { FacebookAuthGuard } from './guard/facebook-auth.guard';
 import { AuthGuard } from './guard/auth.guard';
 import {
   Controller,
@@ -60,7 +61,27 @@ export class AuthController {
       res.status(500).json({ message: 'Error en la autenticación con Google' });
     }
   }
+  @Get('facebook')
+  @UseGuards(FacebookAuthGuard) // ⬅️ Usar el Guard dedicado
+  async facebookAuth() {
+    // Inicia la autenticación, redirige a Facebook
+  }
 
+  @Get('facebook/callback')
+  @UseGuards(FacebookAuthGuard) // ⬅️ Usar el Guard dedicado
+  async facebookAuthRedirect(@Req() req, @Res() res) {
+    try {
+      // req.user contendrá el objeto con el token de Facebook
+      const { token, user } = await this.authService.facebookLogin(req.user); 
+      
+      const origin = req.headers.origin || 'http://localhost:4200';
+      // Redirigir al frontend con el token
+      res.redirect(`${origin}/?token=${token}`);
+    } catch (error) {
+      console.error('Error en la autenticación con Facebook:', error);
+      res.status(500).json({ message: 'Error en la autenticación con Facebook' });
+    }
+  }
   //vista a perfil
   @ApiBearerAuth()
   @Get('profile')

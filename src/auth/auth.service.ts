@@ -86,6 +86,44 @@ export class AuthService {
       },
     };
   }
+  // Nuevo método para manejar el login de Facebook
+  async facebookLogin(user: any): Promise<{ token: string; user: any }> {
+    const { facebookId, name, facebookAccessToken } = user;
+    
+    // 1. Buscar usuario por ID de Facebook (PRIMARY KEY para SSO)
+    let existingUser = await this.usersService.findOneByFacebookId(facebookId);
+    
+    // 2. Si no existe, crear el usuario con los datos de SSO
+    if (!existingUser) {
+      // Creamos un usuario de solo SSO. El email será NULL en la base de datos, 
+      // lo cual mantiene la unicidad del login local.
+      existingUser = await this.usersService.create({
+        email: null, // ⬅️ NULL para que no choque con el error de Scopes
+        name: name,
+        password: null, 
+        facebookId: facebookId, // Guardamos el ID de Facebook
+      });
+    }
+    
+    // 3. Generar el JWT de tu aplicación
+    const payload = { 
+      id: existingUser.id, 
+      email: existingUser.email, 
+      role: existingUser.role 
+    };
+
+    const token = await this.jwtService.signAsync(payload);
   
+    return {
+      token,
+      user: {
+        id: existingUser.id,
+        name: existingUser.name,
+        email: existingUser.email,
+        role: existingUser.role,
+        facebookAccessToken: facebookAccessToken, // Devolvemos el token para publicar
+      },
+    };
+  }
 
 }

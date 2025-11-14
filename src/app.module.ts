@@ -5,8 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { RoomsModule } from './rooms/rooms.module';
-import { RoomUserModule } from './room-user/room-user.module';
+import { ChatbotModule } from './chatbot/chatbot.module';
 
 
 
@@ -28,8 +27,8 @@ import { RoomUserModule } from './room-user/room-user.module';
     }),
     UsersModule,
     AuthModule,
-    RoomsModule,
-    RoomUserModule,
+    ChatbotModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

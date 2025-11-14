@@ -1,6 +1,5 @@
 import { Column, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Room } from 'src/rooms/entities/room.entity';
-import { RoomUser } from 'src/room-user/entities/room-user.entity';
+
 import { Role } from 'src/common/enums/rol.enum';
 
 
@@ -12,8 +11,13 @@ export class User {
   @Column()
   name: string;
 
-  @Column({ unique: true, nullable: false })
-  email: string;
+  // 🚨 CAMBIO CLAVE 1: Permitimos NULL para usuarios de SSO sin email
+  @Column({ unique: true, nullable: true })
+  email: string | null; 
+
+  // 🚨 CAMBIO CLAVE 2: Añadimos facebookId como identificador único de SSO
+  @Column({ unique: true, nullable: true })
+  facebookId: string | null; 
 
   @Column({ nullable: true, select: false })
   password: string;
@@ -23,10 +27,4 @@ export class User {
 
   @DeleteDateColumn()
   deletedAt: Date;
-
-  @OneToMany(() => Room, room => room.creator)
-  createdRooms: Room[];
-
-  @OneToMany(() => RoomUser, roomUser => roomUser.user)
-  rooms: RoomUser[]; // Salas a las que el usuario pertenece
 }

@@ -1,3 +1,5 @@
+import { FacebookAuthGuard } from './guard/facebook-auth.guard';
+import { FacebookStrategy } from './strategies/facebook.strategy';
 import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from 'src/users/users.module';
@@ -24,7 +26,7 @@ import { PassportModule } from '@nestjs/passport';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy, GoogleAuthGuard],
+  providers: [AuthService, GoogleStrategy, GoogleAuthGuard, FacebookStrategy, FacebookAuthGuard],
   exports: [JwtModule],
 })
 export class AuthModule {}
