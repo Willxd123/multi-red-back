@@ -1,11 +1,13 @@
+import { SocialAccountsModule } from './../social_accounts/social_accounts.module';
 import { FacebookAuthGuard } from './guard/facebook-auth.guard';
+import { FacebookConnectGuard } from './guard/facebook-connect.guard';
 import { FacebookStrategy } from './strategies/facebook.strategy';
+import { FacebookConnectStrategy } from './strategies/facebook-connect.strategy';
 import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from 'src/users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-// import { jwtConstants } from './constants/jwt.constant';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { GoogleAuthGuard } from './guard/google-auth.guard';
@@ -15,6 +17,7 @@ import { PassportModule } from '@nestjs/passport';
   imports: [
     PassportModule.register({ defaultStrategy: 'google' }),
     forwardRef(() => UsersModule), 
+    SocialAccountsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -26,7 +29,15 @@ import { PassportModule } from '@nestjs/passport';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy, GoogleAuthGuard, FacebookStrategy, FacebookAuthGuard],
+  providers: [
+    AuthService, 
+    GoogleStrategy, 
+    GoogleAuthGuard, 
+    FacebookStrategy, 
+    FacebookAuthGuard,
+    FacebookConnectStrategy, // ⬅️ NUEVA STRATEGY
+    FacebookConnectGuard,     // ⬅️ NUEVO GUARD
+  ],
   exports: [JwtModule],
 })
 export class AuthModule {}

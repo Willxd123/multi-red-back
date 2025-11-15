@@ -6,6 +6,8 @@ import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { ChatbotModule } from './chatbot/chatbot.module';
+import { SocialAccountsModule } from './social_accounts/social_accounts.module';
+import { PostsModule } from './post/post.module';
 
 
 
@@ -28,6 +30,8 @@ import { ChatbotModule } from './chatbot/chatbot.module';
     UsersModule,
     AuthModule,
     ChatbotModule,
+    SocialAccountsModule,
+    PostsModule,
 
   ],
   controllers: [AppController],

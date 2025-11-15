@@ -11,10 +11,15 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       clientSecret: configService.get<string>('FACEBOOK_APP_SECRET'),
       callbackURL: configService.get<string>('FACEBOOK_CALLBACK_URL'),
       
-      // scope: ['public_profile'], 
+      // Permisos básicos
+      scope: ['public_profile', 'email'],
       
-      profileFields: ['id', 'name'], 
+      // Campos del perfil
+      profileFields: ['id', 'emails', 'name', 'displayName'],
+      
       passReqToCallback: true,
+      enableProof: true,
+      state: true, // ⬅️ Habilitar state para pasar el JWT
     });
   }
 
@@ -25,13 +30,24 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     profile: Profile,
     done: (err: any, user: any, info?: any) => void,
   ): Promise<void> {
-    const { name, id } = profile; 
-    const user = {
-      email: null, 
-      facebookId: id, 
-      name: `${name.givenName} ${name.familyName}`,
-      facebookAccessToken: accessToken,
-    };
-    done(null, user);
+    try {
+      console.log('📘 Facebook Profile recibido:', profile);
+      console.log('🔑 Access Token recibido:', accessToken);
+      
+      const { name, id, emails } = profile;
+      
+      const user = {
+        email: emails && emails.length > 0 ? emails[0].value : null,
+        facebookId: id,
+        name: profile.displayName || `${name?.givenName || ''} ${name?.familyName || ''}`.trim(),
+        facebookAccessToken: accessToken,
+      };
+      
+      console.log('✅ Usuario mapeado:', user);
+      done(null, user);
+    } catch (error) {
+      console.error('❌ Error en Facebook Strategy:', error);
+      done(error, null);
+    }
   }
 }

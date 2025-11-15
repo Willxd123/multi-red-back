@@ -1,3 +1,4 @@
+import { SocialAccountsService } from './../social_accounts/social_accounts.service';
 import {
   BadGatewayException,
   Injectable,
@@ -8,28 +9,25 @@ import { RegisterDto } from './dto/register.dto';
 import * as bcryptjs from 'bcryptjs';
 import { LogingDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private jwtService: JwtService,
+    private readonly socialAccountsService: SocialAccountsService, // ⬅️ INYECTAR
   ) {}
 
   async register({ name, email, password }: RegisterDto) {
     const user = await this.usersService.findOneByEmail(email);
-    //almacena el usuario reguistrado
     if (user) {
       throw new BadGatewayException('User already exists');
     }
     await this.usersService.create({
       name,
       email,
-      password: await bcryptjs.hash(password, 10), //encriptado de contraseña
+      password: await bcryptjs.hash(password, 10),
     });
-    //rellena los campos del usuario asignado en el body luego ser validado por el controlador
-    /* devuelve el nombre y correo */
     return {
       name,
       email,
@@ -45,24 +43,19 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('password is wrong');
     }
-    //no poner informacion confidencial del usuario
     const payload = { id: user.id, email: user.email, role: user.role };
-
     const token = await this.jwtService.signAsync(payload);
-
     return {
       token,
       email,
     };
   }
 
-  //prueba para ruta con rol autorizado
-
   async profile({ email, role }: { email: string; role: string }) {
     return await this.usersService.findOneByEmail(email);
   }
 
-  //google
+  // ⬅️ NUEVO: Login con Google (para AUTENTICACIÓN)
   async googleLogin(user: any): Promise<{ token: string; user: any }> {
     let existingUser = await this.usersService.findOneByEmail(user.email);
   
@@ -70,11 +63,15 @@ export class AuthService {
       existingUser = await this.usersService.create({
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
-        password: null, // No almacenamos contraseña para usuarios de Google
+        password: null,
       });
     }
   
-    const token = await this.jwtService.signAsync({ id: existingUser.id, email: existingUser.email });
+    const token = await this.jwtService.signAsync({ 
+      id: existingUser.id, 
+      email: existingUser.email,
+      role: existingUser.role,
+    });
   
     return {
       token,
@@ -86,26 +83,22 @@ export class AuthService {
       },
     };
   }
-  // Nuevo método para manejar el login de Facebook
+
+  // ⬅️ NUEVO: Login con Facebook (para AUTENTICACIÓN - solo pruebas)
   async facebookLogin(user: any): Promise<{ token: string; user: any }> {
     const { facebookId, name, facebookAccessToken } = user;
     
-    // 1. Buscar usuario por ID de Facebook (PRIMARY KEY para SSO)
     let existingUser = await this.usersService.findOneByFacebookId(facebookId);
     
-    // 2. Si no existe, crear el usuario con los datos de SSO
     if (!existingUser) {
-      // Creamos un usuario de solo SSO. El email será NULL en la base de datos, 
-      // lo cual mantiene la unicidad del login local.
       existingUser = await this.usersService.create({
-        email: null, // ⬅️ NULL para que no choque con el error de Scopes
+        email: null,
         name: name,
         password: null, 
-        facebookId: facebookId, // Guardamos el ID de Facebook
+        facebookId: facebookId,
       });
     }
     
-    // 3. Generar el JWT de tu aplicación
     const payload = { 
       id: existingUser.id, 
       email: existingUser.email, 
@@ -121,9 +114,26 @@ export class AuthService {
         name: existingUser.name,
         email: existingUser.email,
         role: existingUser.role,
-        facebookAccessToken: facebookAccessToken, // Devolvemos el token para publicar
+        facebookAccessToken: facebookAccessToken,
       },
     };
   }
 
+  // ⬅️ NUEVO: Conectar Facebook a usuario YA autenticado
+  async connectFacebook(userId: number, facebookData: any): Promise<{ message: string }> {
+    const { facebookId, facebookAccessToken } = facebookData;
+    
+    // Guardar o actualizar la cuenta de Facebook vinculada
+    await this.socialAccountsService.upsertAccount(
+      userId,
+      'facebook',
+      facebookId,
+      facebookAccessToken,
+      null, // Facebook tokens no expiran fácilmente, pero puedes calcularlo
+    );
+
+    return {
+      message: 'Facebook conectado exitosamente',
+    };
+  }
 }

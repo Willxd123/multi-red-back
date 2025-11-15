@@ -1,3 +1,4 @@
+import { SocialAccount } from './../../social_accounts/entities/social_account.entity';
 import { Column, DeleteDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Role } from 'src/common/enums/rol.enum';
@@ -27,4 +28,7 @@ export class User {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  @OneToMany(() => SocialAccount, (socialAccount) => socialAccount.user)
+  socialAccounts: SocialAccount[];
 }
